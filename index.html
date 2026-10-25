@@ -7,7 +7,7 @@
   <title>James A. Marano | IT Portfolio</title>
 
   <style>
-    /* ================= BLUEPRINT THEME (STATIC BACKGROUND) ================= */
+    /* ================= BLUEPRINT THEME ================= */
     :root {
       --bg: #0a1128; /* Deep Blueprint Blue */
       --surface: rgba(16, 27, 58, 0.8); 
@@ -36,6 +36,12 @@
         linear-gradient(90deg, rgba(56, 189, 248, 0.1) 1px, transparent 1px);
       background-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px;
       background-position: center center;
+    }
+
+    /* Canvas for Floating Particles */
+    #particle-canvas {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      z-index: -1; pointer-events: none;
     }
 
     a { color: inherit; text-decoration: none; }
@@ -78,42 +84,55 @@
     .btn.secondary { background: transparent; color: #fff; }
     .btn.secondary:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-3px); }
 
-    /* ================= DIAMOND (ROTATED SQUARE) PFP ================= */
-    .diamond-container {
-      position: relative; width: 320px; height: 320px; margin: 0 auto;
-      display: flex; justify-content: center; align-items: center;
+    /* ================= BOX PFP ================= */
+    .box-pfp-container {
+      position: relative;
+      width: 320px;
+      height: 400px;
+      margin: 0 auto;
+      background: #0f172a;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+      transition: all 0.4s ease;
+      overflow: hidden;
     }
 
-    .diamond-bg {
-      position: absolute; width: 100%; height: 100%;
-      background: var(--accent); 
-      transform: rotate(45deg);
-      box-shadow: 0 0 30px var(--accent-dim);
-      animation: pulseBorder 4s infinite alternate;
+    .box-pfp-container:hover {
+      transform: translateY(-8px);
+      border-color: var(--accent);
+      box-shadow: 0 20px 45px rgba(0,0,0,0.8), 0 0 20px var(--accent-dim);
     }
 
-    @keyframes pulseBorder {
-      0% { transform: rotate(45deg) scale(0.95); opacity: 0.5; }
-      100% { transform: rotate(45deg) scale(1.02); opacity: 1; }
+    /* Tech grid inside the box */
+    .box-pfp-container::before {
+      content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background-image: 
+        linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px);
+      background-size: 15px 15px;
+      z-index: 1; pointer-events: none;
     }
 
-    .diamond-photo {
-      position: relative; width: 280px; height: 280px;
-      background: var(--bg); overflow: hidden;
-      transform: rotate(45deg);
-      border: 4px solid var(--bg);
-      z-index: 2;
-    }
-
-    .diamond-photo img {
+    .box-pfp-container img {
       width: 100%; height: 100%; object-fit: cover;
-      transform: rotate(-45deg) scale(1.4); /* Counter-rotate */
-      transition: transform 0.5s;
+      border-radius: 4px; position: relative; z-index: 2;
+      filter: grayscale(20%) contrast(110%);
+      transition: filter 0.3s;
     }
 
-    .diamond-photo:hover img {
-      transform: rotate(-45deg) scale(1.5);
+    .box-pfp-container:hover img { filter: grayscale(0%) contrast(100%); }
+
+    /* Tech corner accents */
+    .box-corner {
+      position: absolute; width: 20px; height: 20px;
+      border: 3px solid var(--accent); z-index: 3;
     }
+    .box-c1 { top: 0; left: 0; border-right: none; border-bottom: none; border-top-left-radius: 8px; }
+    .box-c2 { top: 0; right: 0; border-left: none; border-bottom: none; border-top-right-radius: 8px; }
+    .box-c3 { bottom: 0; left: 0; border-right: none; border-top: none; border-bottom-left-radius: 8px; }
+    .box-c4 { bottom: 0; right: 0; border-left: none; border-top: none; border-bottom-right-radius: 8px; }
 
     /* ================= TECH CARDS ================= */
     section { padding: 100px 0; }
@@ -187,13 +206,15 @@
       .about-grid, .skills-grid, .contact-grid { grid-template-columns: 1fr; }
       .navlinks { display: none; }
       .resume-band { flex-direction: column; text-align: center; }
-      .diamond-container { width: 260px; height: 260px; }
-      .diamond-photo { width: 220px; height: 220px; }
+      .box-pfp-container { width: 280px; height: 350px; }
     }
   </style>
 </head>
 
 <body>
+
+  <!-- PARTICLE ANIMATION CANVAS -->
+  <canvas id="particle-canvas"></canvas>
 
   <header>
     <div class="wrap">
@@ -225,13 +246,15 @@
       </div>
       
       <div class="hidden-el">
-        <!-- DIAMOND PFP -->
-        <div class="diamond-container">
-          <div class="diamond-bg"></div>
-          <div class="diamond-photo">
-            <!-- EXACT FILENAME FROM SCREENSHOT -->
-            <img src="pfp.png" alt="James A. Marano" />
-          </div>
+        <!-- BOX PFP -->
+        <div class="box-pfp-container">
+          <div class="box-corner box-c1"></div>
+          <div class="box-corner box-c2"></div>
+          <div class="box-corner box-c3"></div>
+          <div class="box-corner box-c4"></div>
+          
+          <!-- EXACT FILENAME FROM SCREENSHOT -->
+          <img src="pfp.png" alt="James A. Marano" />
         </div>
       </div>
     </div>
@@ -500,6 +523,65 @@
         track.scrollBy({ left: scrollAmount, behavior: 'smooth' });
       });
     }
+
+    // 3. FLOATING PARTICLES BACKGROUND
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let particles = [];
+
+    class Particle {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 2 + 0.5;
+        this.speedX = (Math.random() - 0.5) * 0.5;
+        this.speedY = (Math.random() - 0.5) * 0.5;
+        this.opacity = Math.random() * 0.5 + 0.1;
+      }
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+
+        if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+        if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(56, 189, 248, ${this.opacity})`;
+        ctx.fill();
+      }
+    }
+
+    function initParticles() {
+      particles = [];
+      let count = (canvas.width * canvas.height) / 15000;
+      for (let i = 0; i < count; i++) {
+        particles.push(new Particle());
+      }
+    }
+
+    function animateParticles() {
+      requestAnimationFrame(animateParticles);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+    }
+
+    initParticles();
+    animateParticles();
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      initParticles();
+    });
   </script>
 
 </body>
